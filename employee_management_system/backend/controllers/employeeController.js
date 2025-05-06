@@ -72,3 +72,26 @@ exports.deleteEmployee = async (req, res) => {
     res.status(500).json({ message: 'Error deleting employee.' });
   }
 };
+
+// Dashboard stats
+exports.dashboardStats = async (req, res) => {
+  try {
+    const totalEmployees = await Employee.count();
+    // If you have a status field, you can count active employees. For now, count all as active.
+    const activeEmployees = totalEmployees; // Adjust if you add a status field
+    // Recently added employees (last 5 by id)
+    const recentlyAdded = await Employee.findAll({
+      order: [['id', 'DESC']],
+      limit: 5,
+      attributes: ['id', 'name', 'email', 'role']
+    });
+    res.json({
+      totalEmployees,
+      activeEmployees,
+      recentlyAdded
+    });
+  } catch (error) {
+    console.error('Error fetching dashboard stats:', error);
+    res.status(500).json({ message: 'Error fetching dashboard stats.' });
+  }
+};

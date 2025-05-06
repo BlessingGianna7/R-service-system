@@ -19,4 +19,7 @@ router.put('/employees/:id', employeeController.updateEmployee);
 // Delete employee
 router.delete('/employees/:id', employeeController.deleteEmployee);
 
+// Dashboard stats
+router.get('/dashboard/stats', employeeController.dashboardStats);
+
 module.exports = router;
