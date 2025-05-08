@@ -3,6 +3,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/layout/Layout";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
+import VerifyEmail from './pages/auth/VerifyEmail';
 import Dashboard from "./pages/dashboard/Dashboard";
 import AddEmployeePage from "./pages/employee/AddEmployeePage";
 import EditEmployeePage from "./pages/employee/EditEmployeePage";
@@ -13,6 +14,7 @@ function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/employees" element={<EmployeesPage />} />

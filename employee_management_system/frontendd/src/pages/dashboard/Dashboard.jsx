@@ -7,13 +7,25 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
 
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const limit = 10; // items per page
+  const [totalPages, setTotalPages] = useState(1);
+
   useEffect(() => {
     const fetchStatsAndEmployees = async () => {
+      setIsLoading(true);
       try {
-        const statsRes = await axiosInstance.get('/api/dashboard/stats');
+        // Fetch stats
+        const statsRes = await axiosInstance.get('/api/employees/dashboard/stats');
         setStats(statsRes.data);
-        const empRes = await axiosInstance.get('/api/employees');
+
+        // Fetch paginated employees
+        const empRes = await axiosInstance.get('/api/employees', {
+          params: { page, limit }
+        });
         setEmployees(empRes.data.employees || []);
+        setTotalPages(empRes.data.totalPages);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -21,7 +33,7 @@ const Dashboard = () => {
       }
     };
     fetchStatsAndEmployees();
-  }, []);
+  }, [page]);
 
   const filteredEmployees = employees.filter(
     (emp) =>
@@ -39,6 +51,7 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-8">
+      {/* Stat Cards */}
       <div className="flex flex-col md:flex-row gap-6">
         <div className="flex-1 bg-white rounded-xl shadow p-6 flex items-center border-2 border-blue-200">
           <div className="bg-blue-100 rounded-full h-12 w-12 flex items-center justify-center mr-4">
@@ -46,7 +59,7 @@ const Dashboard = () => {
           </div>
           <div>
             <div className="text-gray-500 text-sm font-medium mb-1">Total Employees</div>
-            <div className="text-3xl font-bold text-blue-700">{employees.length}</div>
+            <div className="text-3xl font-bold text-blue-700">{stats?.totalEmployees ?? 0}</div>
           </div>
         </div>
         <div className="flex-1 bg-white rounded-xl shadow p-6 flex items-center border-2 border-green-200">
@@ -55,10 +68,12 @@ const Dashboard = () => {
           </div>
           <div>
             <div className="text-gray-500 text-sm font-medium mb-1">Active Employees</div>
-            <div className="text-3xl font-bold text-green-700">{stats?.activeEmployees}</div>
+            <div className="text-3xl font-bold text-green-700">{stats?.activeEmployees ?? 0}</div>
           </div>
         </div>
       </div>
+
+      {/* Employees Table */}
       <div className="bg-white rounded-xl shadow p-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
           <h2 className="text-lg font-semibold text-gray-900">Employees</h2>
@@ -66,7 +81,7 @@ const Dashboard = () => {
             type="text"
             placeholder="Search employees..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             className="border border-gray-300 rounded px-4 py-2 w-full md:w-72 focus:outline-none focus:ring-2 focus:ring-blue-200"
           />
         </div>
@@ -95,9 +110,28 @@ const Dashboard = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        <div className="flex justify-center space-x-2 mt-4">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+          >
+            Prev
+          </button>
+          <span className="px-3 py-1">Page {page} of {totalPages}</span>
+          <button
+            disabled={page === totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );
 };
 
-export default Dashboard; 
+export default Dashboard;

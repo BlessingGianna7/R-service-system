@@ -11,13 +11,29 @@ exports.createEmployee = async (req, res) => {
   }
 };
 
-// Get all employees
+
 exports.getEmployees = async (req, res) => {
   try {
-    const employees = await Employee.findAll();
-    res.status(200).json({ employees });
+    // Parse query params
+    const page  = parseInt(req.query.page,  10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const offset = (page - 1) * limit;
+
+    // Fetch with count
+    const { count, rows } = await Employee.findAndCountAll({
+      limit,
+      offset,
+      order: [['id', 'DESC']]
+    });
+
+    res.status(200).json({
+      totalItems: count,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page,
+      employees: rows
+    });
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching employees:', error);
     res.status(500).json({ message: 'Error fetching employees.' });
   }
 };

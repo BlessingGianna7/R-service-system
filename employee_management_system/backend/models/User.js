@@ -1,79 +1,60 @@
-// models/User.js
+const { DataTypes } = require('sequelize');
+const bcrypt = require('bcryptjs');
+const sequelize = require('../config/db');
 
-const { DataTypes, Sequelize } = require("sequelize");
-
-const sequelize = new Sequelize({
-  dialect: "postgres",
-  username: "postgres",
-  password: "postgres",
-  database: "employee_management_system",
-  host: "localhost",
-  port: 5432,
-});
-
-const User = sequelize.define(
-  "users",
-  {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
-      allowNull: false,
-    },
-    username: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      validate: {
-        len: [3, 50],
-      },
-    },
-    email: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
-      validate: {
-        isEmail: true,
-      },
-    },
-    password: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      validate: {
-        len: [6, 100],
-      },
+const User = sequelize.define('User', {
+  username: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+    validate: {
+      isEmail: true,
     },
   },
-  {
-    timestamps: false,
-    indexes: [
-      {
-        name: "tb_username",
-        fields: ["username"],
-      },
-      {
-        name: "tb_email",
-        fields: ["email"],
-      },
-    ],
-  }
-);
-
-// Custom method to find a user by email
-User.findByEmail = async function (email) {
-  return await this.findOne({
-    where: {
-      email,
+  password: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  role: {
+    type: DataTypes.STRING,
+    defaultValue: 'employee',
+  },
+  isVerified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  otpCode: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  otpExpiresAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+}, {
+  hooks: {
+    beforeCreate: async (user) => {
+      if (user.password) {
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(user.password, salt);
+      }
     },
-  });
-};
+    beforeUpdate: async (user) => {
+      if (user.changed('password')) {
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(user.password, salt);
+      }
+    },
+  },
+});
 
-sequelize
-  .sync({ alter: true })
-  .then(() => {
-    console.log("User table created successfully");
-  })
-  .catch((error) => {
-    console.error("Error creating the user table:", error);
-  });
+// Instance method to compare password
+User.prototype.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
 
 module.exports = User;

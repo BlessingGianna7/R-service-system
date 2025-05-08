@@ -1,10 +1,24 @@
-// routes/authRoutes.js
-const express = require('express');
-const authController = require('../controllers/authController');
+const express = require("express")
+const router = express.Router()
+const { body } = require("express-validator")
+const { register, verifyEmail, resendOTP, login } = require("../controllers/authController")
+const { validate, registerValidation, loginValidation, otpValidation } = require("../middleware/validation")
 
-const router = express.Router();
+// Auth routes
+router.post("/signup", validate(registerValidation), register)
+router.post("/verify-email", validate(otpValidation), verifyEmail)
+router.post(
+  "/resend-otp",
+  validate([
+    body("email")
+      .trim()
+      .notEmpty()
+      .withMessage("Email is required")
+      .isEmail()
+      .withMessage("Please provide a valid email"),
+  ]),
+  resendOTP,
+)
+router.post("/login", validate(loginValidation), login)
 
-router.post('/signup', authController.signup);
-router.post('/login', authController.login);
-
-module.exports = router;
+module.exports = router

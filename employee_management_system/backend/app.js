@@ -5,43 +5,67 @@ const swaggerDocument = require('./swagger.json');
 const sequelize = require('./config/db');
 const employeeRoutes = require('./routes/employeeRoutes');
 const authRoutes = require('./routes/authRoutes');
-const Employee = require('./models/Employee');
+require('dotenv').config();
 
 const app = express();
 
 // Middleware
 app.use(express.json());
 app.use(cors({
-    origin: 'http://localhost:5173', // Allow requests from your frontend
-    credentials: true,
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    allowedHeaders: 'Content-Type, Authorization'
+  origin: '*',
+  credentials: true 
 }));
 
-// Swagger setup
+// Check email configuration on startup
+const checkEmailConfig = () => {
+  const emailUser = process.env.EMAIL || process.env.EMAIL_USER;
+  const emailPass = process.env.EMAIL_PASS || process.env.EMAIL_PASSWORD;
+  
+  if (!emailUser || !emailPass) {
+    console.warn('WARNING: Email configuration is missing or incomplete');
+    console.warn('Set EMAIL/EMAIL_USER and EMAIL_PASS/EMAIL_PASSWORD environment variables');
+  } else {
+    console.log('Email configuration detected');
+  }
+};
+
+// Swagger Docs
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// Routes
-app.use('/api', employeeRoutes);
+// API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/employees', employeeRoutes);
 
-// Sync Database
-(async () => {
-    try {
-        await sequelize.authenticate();
-        console.log('Database connected successfully.');
-
-        await sequelize.sync({ alter: true });
-        console.log("Database synced successfully.");
-
-        const tables = await sequelize.showAllSchemas();
-        console.log('Synced Tables:', tables);
-    } catch (error) {
-        console.error('Database connection failed or error syncing models:', error);
-    }
-})();
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date() });
 });
+
+// Error handler middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    success: false,
+    message: 'Something went wrong on the server',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
+// Database connection and server start
+const PORT = process.env.PORT || 5000;
+
+// Check configurations
+checkEmailConfig();
+
+sequelize.sync()
+  .then(() => {
+    console.log('Database connected');
+    app.listen(PORT, () => {
+      console.log(`Server is running on http://localhost:${PORT}`);
+      console.log(`Swagger docs available at http://localhost:${PORT}/api-docs`);
+      console.log(`Health check available at http://localhost:${PORT}/health`);
+    });
+  })
+  .catch(err => {
+    console.error('Failed to connect to the database:', err);
+  });
