@@ -6,6 +6,7 @@ const sequelize = require('./config/db');
 const employeeRoutes = require('./routes/employeeRoutes');
 const authRoutes = require('./routes/authRoutes');
 require('dotenv').config();
+const morgan = require('morgan')
 
 const app = express();
 
@@ -29,6 +30,7 @@ const checkEmailConfig = () => {
   }
 };
 
+app.use(morgan())
 // Swagger Docs
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
